@@ -20,12 +20,15 @@ function sendToTelegram(text) {
       reject(new Error('Telegram not configured'));
       return;
     }
+
     const body = JSON.stringify({
       chat_id: TELEGRAM_CHAT_ID,
       text: text,
       parse_mode: 'HTML'
     });
+
     const url = new URL(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`);
+
     const opts = {
       hostname: url.hostname,
       path: url.pathname + url.search,
@@ -35,6 +38,7 @@ function sendToTelegram(text) {
         'Content-Length': Buffer.byteLength(body)
       }
     };
+
     const req = https.request(opts, (res) => {
       let data = '';
       res.on('data', (chunk) => { data += chunk; });
@@ -48,10 +52,18 @@ function sendToTelegram(text) {
         }
       });
     });
+
     req.on('error', reject);
     req.write(body);
     req.end();
   });
+}
+
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 }
 
 app.post('/api/send-question', async (req, res) => {
@@ -76,13 +88,6 @@ app.post('/api/send-question', async (req, res) => {
     res.status(500).json({ success: false, error: 'Не удалось отправить в Telegram.' });
   }
 });
-
-function escapeHtml(s) {
-  return String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-}
 
 app.listen(PORT, () => {
   console.log('Server listening on port', PORT);
